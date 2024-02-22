@@ -1,22 +1,26 @@
 {
   "name": "@hieuzest/koishi-plugin-alias",
-  "description": "",
-  "version": "0.0.1",
+  "description": "Better Command Alias",
+  "version": "0.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib",
     "dist"
   ],
+  "author": "Hieuzest <girkirin@hotmail.com>",
   "license": "MIT",
-  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koikirin/koishi-plugin-alias.git"
+  },
+  "homepage": "https://github.com/koikirin/koishi-plugin-alias",
   "keywords": [
     "chatbot",
     "koishi",
     "plugin"
   ],
-  "devDependencies": {},
   "peerDependencies": {
-    "koishi": "^4.17.0-beta.4"
+    "koishi": "^4.16.0"
   }
 }
