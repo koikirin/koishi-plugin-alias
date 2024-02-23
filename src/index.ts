@@ -68,13 +68,11 @@ export class AliasService {
 
     ctx.on('internal/before-update', (state, config) => {
       if (state.runtime.name !== 'CommandManager') return
-      const resolved = state.runtime.config
       const modified: Record<string, boolean> = Object.create(null)
-      const checkPropertyUpdate = (key: string) => modified[key] ??= !deepEqual(state.config[key], resolved[key])
-
-      for (const key in { ...state.config, ...resolved }) {
+      const checkPropertyUpdate = (key: string) => modified[key] ??= !deepEqual(state.config[key], config[key])
+      for (const key in { ...state.config, ...config }) {
         if (!(key in modified) && checkPropertyUpdate(key)) {
-          ctx.logger.debug(`update command config: ${key}`)
+          ctx.logger.debug(`update command aliases: ${key}`)
           applyCommand(ctx.$commander.get(key))
         }
       }
