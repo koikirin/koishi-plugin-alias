@@ -1,4 +1,4 @@
-import { Command, Context, Schema, Session } from 'koishi'
+import { Command, Context, deepEqual, Schema, Session } from 'koishi'
 
 declare module 'koishi' {
   namespace Command {
@@ -30,27 +30,20 @@ export class AliasService {
       const isStrict = this.ctx.root.config.prefixMode === 'strict' || !isDirect && !stripped.appel
       if (argv.root && stripped.prefix === null && isStrict) return
       const segments: string[] = []
-      let resolved: { name?: string; alias?: AliasService.Alias }
       while (argv.tokens.length) {
         const { content } = argv.tokens[0]
         segments.push(content)
-        const { name, alias } = this._resolve(segments.join('.'))
+        const { alias } = this._resolve(segments.join('.'))
         if (!alias) break
-        resolved = { name, alias }
         argv.tokens.shift()
+        argv.command = ctx.$commander.get(alias.command)
         argv.args = alias.args
         argv.options = alias.options
       }
-      if (!resolved) return
-      argv.tokens.unshift({
-        content: resolved.alias.command,
-        quoted: false,
-        terminator: '',
-        inters: [],
-      })
     }, true)
 
     const applyCommand = async (command: Command) => {
+      if (!command) return
       ctx.setTimeout(() => {
         if (command.config.aliases?.length) {
           this._store = this._store.filter((alias) => alias.command !== command.name)
@@ -72,6 +65,20 @@ export class AliasService {
     ctx.$commander._commandList.forEach(applyCommand)
     ctx.on('command-added', applyCommand)
     ctx.on('command-updated', applyCommand)
+
+    ctx.on('internal/before-update', (state, config) => {
+      if (state.runtime.name !== 'CommandManager') return
+      const resolved = state.runtime.config
+      const modified: Record<string, boolean> = Object.create(null)
+      const checkPropertyUpdate = (key: string) => modified[key] ??= !deepEqual(state.config[key], resolved[key])
+
+      for (const key in { ...state.config, ...resolved }) {
+        if (!(key in modified) && checkPropertyUpdate(key)) {
+          ctx.logger.debug(`update command config: ${key}`)
+          applyCommand(ctx.$commander.get(key))
+        }
+      }
+    })
   }
 
   _resolve(key: string) {
