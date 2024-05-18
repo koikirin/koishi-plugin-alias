@@ -33,7 +33,7 @@ export class AliasService {
       while (argv.tokens.length) {
         const { content } = argv.tokens[0]
         segments.push(content)
-        const { alias } = this._resolve(segments.join('.'))
+        const { alias } = this._resolve(segments.join('.'), session)
         if (!alias) break
         argv.tokens.shift()
         argv.command = ctx.$commander.get(alias.command)
@@ -79,11 +79,11 @@ export class AliasService {
     })
   }
 
-  _resolve(key: string) {
+  _resolve(key: string, session?: Session) {
     if (!key) return {}
     const segments = key.toLowerCase().split('.')
     let i = 1, name = segments[0], alias: AliasService.Alias
-    while ((alias = this.get(name)) && i < segments.length) {
+    while ((alias = this.get(name, session)) && i < segments.length) {
       name = alias.name + '.' + segments[i++]
     }
     return { alias, name }
