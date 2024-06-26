@@ -22,9 +22,9 @@ export class AliasService {
         name: Schema.string().description('别名'),
         source: Schema.string().description('参数'),
         // perms: Schema.array(String).role('perms'),
-        aliasGroup: Schema.union(config.aliasGroups.flatMap(x => Object.keys(x))).default(''),
-        filter: Schema.computed(Boolean).description('过滤器'),
-      })).default([]),
+        aliasGroup: Schema.union(['', ...config.aliasGroups.flatMap(x => Object.keys(x))]).default('').description('别名组'),
+        filter: Schema.computed(Boolean).description('过滤器').hidden(),
+      })).default([]).role('table'),
     }), 900)
 
     ctx.model.extend('channel', {
