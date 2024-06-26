@@ -1,10 +1,15 @@
-import { Command, Context, deepEqual, Schema, Session } from 'koishi'
+import { Command, Context, deepEqual, Dict, remove, Schema, Session } from 'koishi'
+import { } from '@koishijs/plugin-admin'
 
 declare module 'koishi' {
   namespace Command {
     interface Config {
-      aliases: AliasService.Alias[]
+      aliases?: AliasService.Alias[]
     }
+  }
+
+  interface Channel {
+    aliasGroups?: string[]
   }
 }
 
@@ -17,9 +22,31 @@ export class AliasService {
         name: Schema.string().description('别名'),
         source: Schema.string().description('参数'),
         // perms: Schema.array(String).role('perms'),
+        aliasGroup: Schema.union(config.aliasGroups.flatMap(x => Object.keys(x))).default(''),
         filter: Schema.computed(Boolean).description('过滤器'),
       })).default([]),
     }), 900)
+
+    ctx.model.extend('channel', {
+      aliasGroups: 'array',
+    })
+
+    ctx.command('alias.switch <group>', { authority: 3, admin: { channel: true } })
+      .channelFields(['aliasGroups'])
+      .action(async ({ session }, group: string) => {
+        const groups = this.config.aliasGroups.find(x => group in x)
+        if (!groups) return '未找到对应的别名组'
+        if (group in session.channel.aliasGroups) return '未改动'
+        Object.keys(groups).forEach(x => remove(session.channel.aliasGroups, x))
+        session.channel.aliasGroups.push(group)
+        await session.channel.$update()
+        return '成功'
+      })
+
+    ctx.before('attach-channel', (session, fields) => {
+      if (!session.argv) return
+      fields.add('aliasGroups')
+    })
 
     ctx.on('attach', (session) => {
       const { argv } = session
@@ -89,25 +116,38 @@ export class AliasService {
     return { alias, name }
   }
 
-  get(name: string, session?: Session) {
-    return this._store.find((alias) => {
-      return alias.name === name && (session?.resolve(alias.filter) ?? true)
-    })
+  checkAliasGroup(alias: AliasService.Alias, session?: Session<any, 'aliasGroups'>) {
+    if (!alias.aliasGroup) return true
+    if (session?.channel?.aliasGroups?.includes(alias.aliasGroup)) return true
+    const groups = this.config.aliasGroups.find(x => alias.aliasGroup in x)
+    if (!groups) return true
+    if (groups[alias.aliasGroup] && !Object.keys(groups).some(x => session?.channel?.aliasGroups?.includes(x))) return true
+    return false
+  }
+
+  get(name: string, session?: Session<any, 'aliasGroups'>) {
+    return this._store.find((alias) =>
+      alias.name === name && (session?.resolve(alias.filter) ?? true) && this.checkAliasGroup(alias, session),
+    )
   }
 }
 
 export namespace AliasService {
-  export interface Config {}
+  export interface Config {
+    aliasGroups: Dict<boolean>[]
+  }
 
-  export const Config: Schema<Config> = Schema.object({})
+  export const Config: Schema<Config> = Schema.object({
+    aliasGroups: Schema.array(Schema.dict(Schema.boolean().default(false)).role('table')).default([]).description('Mutually Exclusive AliasGroups'),
+  })
 
   export interface Alias extends Command.Alias {
     name: string
     source?: string
     // perms?: string[]
     command?: string
+    aliasGroup?: string
   }
-
 }
 
 export default AliasService
