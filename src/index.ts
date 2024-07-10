@@ -5,6 +5,7 @@ declare module 'koishi' {
   namespace Command {
     interface Config {
       aliases?: AliasService.Alias[]
+      defaultAliasGroup?: string
     }
   }
 
@@ -12,6 +13,8 @@ declare module 'koishi' {
     aliasGroups?: string[]
   }
 }
+
+export const GLOBAL_ALIAS_GROUP = 'N/A'
 
 export class AliasService {
   _store: AliasService.Alias[] = []
@@ -22,9 +25,10 @@ export class AliasService {
         name: Schema.string().description('别名'),
         source: Schema.string().description('参数'),
         // perms: Schema.array(String).role('perms'),
-        aliasGroup: Schema.union(['', ...config.aliasGroups.flatMap(x => Object.keys(x))]).default('').description('别名组'),
+        aliasGroup: Schema.union(['', GLOBAL_ALIAS_GROUP, ...config.aliasGroups.flatMap(x => Object.keys(x))]).default('').description('别名组'),
         filter: Schema.computed(Boolean).description('过滤器').hidden(),
       })).default([]).role('table'),
+      defaultAliasGroup: Schema.union(['', GLOBAL_ALIAS_GROUP, ...config.aliasGroups.flatMap(x => Object.keys(x))]).default('').description('默认别名组'),
     }), 900)
 
     ctx.model.extend('channel', {
@@ -75,11 +79,16 @@ export class AliasService {
         if (command.config.aliases?.length) {
           this._store = this._store.filter((alias) => alias.command !== command.name)
           this._store.push(...command.config.aliases.map(alias => {
+            let parent = command.parent, aliasGroup = alias.aliasGroup || command.config.defaultAliasGroup
+            while (!aliasGroup && parent) {
+              aliasGroup ||= parent.config.defaultAliasGroup
+              parent = parent.parent
+            }
             if (alias.source) {
               const argv = command.parse(alias.source)
-              return { command: command.name, args: argv.args, options: argv.options, ...alias }
+              return { command: command.name, args: argv.args, options: argv.options, ...alias, aliasGroup }
             } else {
-              return { command: command.name, ...alias }
+              return { command: command.name, ...alias, aliasGroup }
             }
           }))
           command._disposables.push(() => {
@@ -117,7 +126,7 @@ export class AliasService {
   }
 
   checkAliasGroup(alias: AliasService.Alias, session?: Session<any, 'aliasGroups'>) {
-    if (!alias.aliasGroup) return true
+    if (!alias.aliasGroup || alias.aliasGroup === GLOBAL_ALIAS_GROUP) return true
     if (session?.channel?.aliasGroups?.includes(alias.aliasGroup)) return true
     const groups = this.config.aliasGroups.find(x => alias.aliasGroup in x)
     if (!groups) return true
