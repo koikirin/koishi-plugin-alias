@@ -17,6 +17,8 @@ declare module 'koishi' {
 export const GLOBAL_ALIAS_GROUP = 'N/A'
 
 export class AliasService {
+  static name = 'alias'
+
   _store: AliasService.Alias[] = []
 
   constructor(public ctx: Context, public config: AliasService.Config) {
@@ -76,8 +78,8 @@ export class AliasService {
     const applyCommand = async (command: Command) => {
       if (!command) return
       ctx.setTimeout(() => {
+        this._store = this._store.filter((alias) => alias.command !== command.name)
         if (command.config.aliases?.length) {
-          this._store = this._store.filter((alias) => alias.command !== command.name)
           this._store.push(...command.config.aliases.map(alias => {
             let parent = command.parent, aliasGroup = alias.aliasGroup || command.config.defaultAliasGroup
             while (!aliasGroup && parent) {
