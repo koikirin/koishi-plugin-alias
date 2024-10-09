@@ -18,6 +18,7 @@ export const GLOBAL_ALIAS_GROUP = 'N/A'
 
 export class AliasService {
   static name = 'alias'
+  static inject = ['database']
 
   _store: AliasService.Alias[] = []
 
