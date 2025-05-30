@@ -33,10 +33,7 @@ before(async () => {
 })
 
 beforeEach(async () => {
-  await app.database.setChannel('mock', '321', {
-    enable: [],
-    disable: []
-  })
+  await app.database.setChannel('mock', '321', {})
 })
 
 describe('koishi-plugin-alias', () => {

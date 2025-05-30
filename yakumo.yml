@@ -1,4 +1,4 @@
-- name: yakumo
+- name: "@hieuzest/yakumo"
   config:
     pipeline:
       build:
@@ -6,5 +6,6 @@
         - esbuild
       clean:
         - tsc --clean
+- name: yakumo/run
 - name: yakumo-esbuild
 - name: yakumo-tsc

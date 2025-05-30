@@ -1,7 +1,7 @@
 {
   "name": "@hieuzest/koishi-plugin-alias",
   "description": "Better Command Alias",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -28,6 +28,7 @@
     "test:html": "shx rm -rf coverage && c8 -r html yarn test"
   },
   "devDependencies": {
+    "@hieuzest/yakumo": "0.3.7",
     "@koishijs/plugin-admin": "^2.0.0-beta.4",
     "@koishijs/plugin-database-memory": "^3.4.0",
     "@koishijs/plugin-help": "^2.4.4",
@@ -53,6 +54,7 @@
     "yml-register": "^1.2.5"
   },
   "peerDependencies": {
-    "koishi": "^4.17.8"
+    "koishi": "^4.17.8",
+    "@koishijs/plugin-commands": "^3.5.5"
   }
 }

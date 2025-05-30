@@ -1,4 +1,4 @@
-import { Command, Context, deepEqual, Dict, remove, Schema, Session } from 'koishi'
+import { Command, Context, Dict, remove, Schema, Session } from 'koishi'
 import { } from '@koishijs/plugin-admin'
 
 declare module 'koishi' {
@@ -104,18 +104,6 @@ export class AliasService {
     ctx.$commander._commandList.forEach(applyCommand)
     ctx.on('command-added', applyCommand)
     ctx.on('command-updated', applyCommand)
-
-    ctx.on('internal/before-update', (state, config) => {
-      if (state.runtime.name !== 'CommandManager') return
-      const modified: Record<string, boolean> = Object.create(null)
-      const checkPropertyUpdate = (key: string) => modified[key] ??= !deepEqual(state.config[key], config[key])
-      for (const key in { ...state.config, ...config }) {
-        if (!(key in modified) && checkPropertyUpdate(key)) {
-          ctx.logger.debug(`update command aliases: ${key}`)
-          applyCommand(ctx.$commander.get(key))
-        }
-      }
-    })
   }
 
   _resolve(key: string, session?: Session) {
